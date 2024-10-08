@@ -21,7 +21,28 @@ class Repository:
         except Exception as e:
             print(f"An error occured: {e}")
             
+    def hash_objects(self, data, obj_type, write=True):
+        """Compute hash of object data of given type and write to object store
+        if 'write' is True. Return SHA-1 object has as hex string."""
+        header = '{} {}'.format(obj_type, len(data)).encode()
+        full_data = header + b'\x00' + data
+        sha1 = hashlib.sha1(full_data).hexdigest()
+        print('Computed SHA-1 hash:', sha1)
+        if write:
+            path = os.path.join('.git', 'objects', sha1[:2], sha1[2:])
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'wb') as file_write:
+                file_write.write(zlib.compress(full_data))
+        return sha1
+            
+        
+         
 if __name__ == "__main__":
     repo_name = "my_repo"
     repo = Repository(repo_name)
+
+    data = b"This works"
+    obj_type = "blob"
     
+    sha1_hash = repo.hash_objects(data, obj_type)
+    print('SHA-1 hash:', sha1_hash)
