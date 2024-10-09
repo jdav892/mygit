@@ -34,9 +34,28 @@ class Repository:
             with open(path, 'wb') as file_write:
                 file_write.write(zlib.compress(full_data))
         return sha1
+    
+    IndexEntry = collections.namedtuple('IndexEntry', [
+        'ctime_s', 'ctime_n', 'mtime_s', 'mtime_n', 'dev', 'ino', 'mode',
+        'uid', 'gid', 'size', 'sha1', 'flags', 'path',
+    ])
+    
+    def read_index():
+        #Read git index file and return list of Index Entry objects
+        data_path = os.path.join('.git', 'index')
+        try:
+            with open(data_path, "r") as data:
+                content = data.read()
+        except FileNotFoundError:
+            return []
+        print(content)
+        
+            
             
         
-         
+
+
+
 if __name__ == "__main__":
     repo_name = "my_repo"
     repo = Repository(repo_name)
