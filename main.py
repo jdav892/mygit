@@ -1,6 +1,14 @@
 import argparse, collections, difflib, enum, hashlib, operator, os, stat
 import struct, sys, time, urllib.request, zlib
 
+#Data for one entry in the git index(.git/index)
+#Moved from class to be used globally
+IndexEntry = collections.namedtuple('IndexEntry', [
+        'ctime_s', 'ctime_n', 'mtime_s', 'mtime_n', 'dev', 'ino', 'mode',
+        'uid', 'gid', 'size', 'sha1', 'flags', 'path',
+    ])
+    
+
 class Repository:
     def __init__(self, repo):
         try:
@@ -35,21 +43,39 @@ class Repository:
                 file_write.write(zlib.compress(full_data))
         return sha1
     
-    IndexEntry = collections.namedtuple('IndexEntry', [
-        'ctime_s', 'ctime_n', 'mtime_s', 'mtime_n', 'dev', 'ino', 'mode',
-        'uid', 'gid', 'size', 'sha1', 'flags', 'path',
-    ])
     
     def read_index():
-        #Read git index file and return list of Index Entry objects
+        #Read git index file and return list of IndexEntry objects
         data_path = os.path.join('.git', 'index')
         try:
             with open(data_path, "r") as data:
                 content = data.read()
         except FileNotFoundError:
             return []
-        print(content)
-        
+
+        digest = hashlib.sha1(data[:-20]).digest()
+        assert digest == data[-20:], 'invalid index checksum'
+        signature, version, num_entries = struct.unpack('!4sLL', data[:12])
+        assert signature == b'DIRC', \
+            'invalid index signature {}'.format(signature)
+        assert version == 2, 'unknown index version {}'.format(version)
+        entry_data = data[12:-20]
+        entries = []
+        i = 0
+        while i + 62 < len(entry_data):
+            fields_end = i + 62
+            fields = struct.unpack('!LLLLLLLLLL20sH',
+                                   entry_data[i:fields_end])
+            path_end  = entry_data.index(b'\x00', fields_end)
+            path = entry_data[fields_end:path_end]
+            entry = IndexEntry(*(fields + (path.decode(), )))
+            entries.append(entry)
+            entry_len = ((62 + len(path) + 8) // 8) * 8
+            i += entry_len
+            
+        assert len(entries) == num_entries
+        return entries
+            
             
             
         
