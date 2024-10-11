@@ -48,7 +48,7 @@ def hash_objects(data, obj_type, write=True):
             write_file(path, zlib.compress(full_data))
     return sha1
 
-def find_objects(sha1_prefix):
+def find_object(sha1_prefix):
     """Find object with given sha-1 prefix and return path to object in object
     store, or raise ValueError if there are no objects or multiple with this prefix."""
     if len(sha1_prefix) < 2:
@@ -63,8 +63,23 @@ def find_objects(sha1_prefix):
             len(objects), sha1_prefix))
     return os.path.join(obj_dir, objects[0])
 
+def read_object(sha1_prefix):
+    """Read object with given sha-1 prefix and return tuple of
+    (object_type, data_bytes) or raise ValueError if not found"""
+    path = find_object(sha1_prefix)
+    full_data = zlib.decompress(read_file(path))
+    nul_index = full_data.index(b'\x00')
+    header = full_data[:nul_index]
+    obj_type, size_str = header.decode().split()
+    size = int(size_str)
+    data = full_data[nul_index + 1:]
+    assert size == len(data), 'expected size {}, got {} bytes'.format(
+        size, len(data))
+    return (obj_type, data)
+
 
     
+     
 def read_index():
     #Read git index file and return list of IndexEntry objects
     data_path = os.path.join('.git', 'index')
