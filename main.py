@@ -48,8 +48,23 @@ def hash_objects(data, obj_type, write=True):
             write_file(path, zlib.compress(full_data))
     return sha1
 
+def find_objects(sha1_prefix):
+    """Find object with given sha-1 prefix and return path to object in object
+    store, or raise ValueError if there are no objects or multiple with this prefix."""
+    if len(sha1_prefix) < 2:
+        raise ValueError('hash prefix must be 2 ore more characters')
+    obj_dir = os.path.join('.git', 'objects', sha1_prefix[:2])
+    rest = sha1_prefix[2:]
+    objects = [name for name in os.listdir(obj_dir) if name.startswith(rest)]
+    if not objects:
+        raise ValueError('object {!r} not found'.format(sha1_prefix))
+    if len(objects) >= 2:
+        raise ValueError('multiple objects ({}) with prefix {!r}'.format(
+            len(objects), sha1_prefix))
+    return os.path.join(obj_dir, objects[0])
 
 
+    
 def read_index():
     #Read git index file and return list of IndexEntry objects
     data_path = os.path.join('.git', 'index')
