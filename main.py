@@ -255,6 +255,14 @@ def write_tree():
         tree_entry = mode_path + b'\x00' + entry.sha1
         tree_entries.append(tree_entry)
     return hash_objects(b''.join(tree_entries), 'tree')
+
+def get_local_main_hash():
+    #Get current commit hash (sha1 string) of local main branch
+    main_path = os.path.join('.git', 'refs', 'heads', 'main')
+    try:
+        return read_file(main_path).decode().strip()
+    except FileNotFoundError:
+        return None
         
             
         
