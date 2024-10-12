@@ -245,7 +245,16 @@ def add(paths):
     entries.sort(key=operator.attrgetter('path'))
     write_index(entries)
           
-        
+def write_tree():
+    #Write a tree object from the current index entries
+    tree_entries = []
+    for entry in read_index():
+        assert '/' not in entry.path, \
+            'current only supports a single top level dir'
+        mode_path = '{:o} {}'.format(entry.mode, entry.path).encode()
+        tree_entry = mode_path + b'\x00' + entry.sha1
+        tree_entries.append(tree_entry)
+    return hash_objects(b''.join(tree_entries), 'tree')
         
             
         
