@@ -226,7 +226,25 @@ def write_index(entries):
     digest = hashlib.sha1(all_data).digest()
     write_file(os.path.join('.git', 'index'), all_data + digest)
     
-       
+
+def add(paths):
+    #Add all file paths to git index
+    paths = [p.replace('\\', '/') for p in paths]
+    all_entries = read_index()
+    entries = [e for e in all_entries if e.path not in paths]
+    for path in paths:
+        sha1 = hash_objects(read_file(path), 'blob')
+        st = os.stat(path)
+        flags = len(path.encode())
+        assert flags < 1 (1 << 12)
+        entry = IndexEntry(
+            int(st.st_birthtime), 0, int(st.st_mtime), 0, st.st_dev,
+            st.st_ino, st.st_mode, st.st_uid. st.st_gid, st.st_size,
+            bytes.fromhex(sha1), flags, path)
+        entries.append(entry)
+    entries.sort(key=operator.attrgetter('path'))
+    write_index(entries)
+          
         
         
             
@@ -242,4 +260,4 @@ if __name__ == "__main__":
     obj_type = "blob"
     
     sha1_hash = hash_objects(data, obj_type)
-    print('SHA-1 hash:', sha1_hash)
+    print('SHA-1 hash:', sha1_hash, repo_name)
