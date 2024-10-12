@@ -236,7 +236,7 @@ def add(paths):
         sha1 = hash_objects(read_file(path), 'blob')
         st = os.stat(path)
         flags = len(path.encode())
-        assert flags < 1 (1 << 12)
+        assert flags < (1 << 12)
         entry = IndexEntry(
             int(st.st_birthtime), 0, int(st.st_mtime), 0, st.st_dev,
             st.st_ino, st.st_mode, st.st_uid. st.st_gid, st.st_size,
