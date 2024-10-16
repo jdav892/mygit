@@ -321,6 +321,15 @@ def build_lines_data(lines):
     result.append(b'0000')
     return b''.join(result)
 
+def http_request(url, username, password, data=None):
+    """Make an authenticated HTTP request to given URL
+    (GET by default, POST if data is not None.)"""
+    password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+    password_manager.add_password(None, url, username, password)
+    auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
+    opener = urllib.request.build_opener(auth_handler)
+    f = opener.open(url, data=data)
+    return f.read()
 
 if __name__ == "__main__":
     repo_name = "my_repo"
