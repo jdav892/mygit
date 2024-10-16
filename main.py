@@ -311,7 +311,15 @@ def extract_lines(data):
             break
     return lines           
         
-
+def build_lines_data(lines):
+    #Build byte string from given lines to send to server
+    result = []
+    for line in lines:
+        result.append('{:04x}'.format(len(line) + 5).encode())
+        result.append(line)
+        result.append(b'\n')
+    result.append(b'0000')
+    return b''.join(result)
 
 
 if __name__ == "__main__":
