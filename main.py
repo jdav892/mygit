@@ -294,7 +294,22 @@ def commit(message, author):
     print('committed to main: {:7}'.format(sha1))
     return sha1 
         
+def extract_lines(data):
+    #Extract list of lines from given server data
+    lines = []
+    i = 0
+    for _ in range(1000):
+        line_length = int(data[i:i + 4], 16)
+        line = data[i + 4: i + line_length]
+        lines.append(line)
+        if line_length == 0:
+            i += 4
+        else:
+            i += line_length
             
+        if i >= len(data):
+            break
+    return lines           
         
 
 
