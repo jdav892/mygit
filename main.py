@@ -379,6 +379,20 @@ def find_tree_objects(tree_sha1):
             objects.add(sha1)
     return objects
 
+def find_commit_objects(commit_sha1):
+    """Return set of sha1 hashes of all objects in this commit
+    (recursively), its tree, its parents, and the hash of the commit."""
+    objects = {commit_sha1}
+    obj_type, commit = read_object(commit_sha1)
+    assert obj_type == 'commit'
+    lines = commit.decode().splitlines()
+    tree = next(l[5:45] for l in lines if l.startswith('tree '))
+    objects.update(find_tree_objects(tree))
+    parents = (l[7:47] for l in lines if l.startswith('parent '))
+    for parent in parents:
+        objects.update(find_commit_objects(parent))
+    return objects
+    
 if __name__ == "__main__":
     repo_name = "my_repo"
     if not os.path.exists(repo_name):
