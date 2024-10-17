@@ -368,6 +368,17 @@ def read_tree(sha1=None, data=None):
         i = end + 1 + 20
     return entries
 
+def find_tree_objects(tree_sha1):
+    """Return set of sha1 hashes of all objects in this tree
+    (recursively), including hash of the tree itself."""
+    objects = {tree_sha1}
+    for mode, path, sha1, in read_tree(sha1=tree_sha1):
+        if stat.S_ISDIR(mode):
+            objects.update(find_tree_objects(sha1))
+        else:
+            objects.add(sha1)
+    return objects
+
 if __name__ == "__main__":
     repo_name = "my_repo"
     if not os.path.exists(repo_name):
