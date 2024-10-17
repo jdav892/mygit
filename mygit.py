@@ -331,7 +331,7 @@ def http_request(url, username, password, data=None):
     f = opener.open(url, data=data)
     return f.read()
 
-def get_remote_master_hash(git_url, username, password):
+def get_remote_main_hash(git_url, username, password):
     """Get a commit hash of remote master branch, return SHA-1 hex string 
     or None if no remote commits."""
     url = git_url + '/info/refs?service=git-receive-pack'
@@ -427,6 +427,34 @@ def create_pack(objects):
     sha1 = hashlib.sha1(contents).digest()
     data = contents + sha1
     return data
+
+def push(git_url, username=None, password=None):
+    #Push main branch to given git repo URL
+    if username is None:
+        username = os.environ.get['GIT_USERNAME']
+    if password is None:
+        username = os.environ.get['GIT_PASSWORD']
+    remote_sha1 = get_remote_main_hash(git_url, username, password)
+    local_sha1 = get_local_main_hash()
+    missing = find_missing_objects(local_sha1, remote_sha1)
+    print('updating remote main from {} to {} ({} object{})'.format(
+            remote_sha1 or 'no commits', local_sha1, len(missing),
+            '' if len(missing) == 1 else 's'))
+    lines = ['{} {} refs/heads/main\x00 report-status'.format(
+            remote_sha1 or ('0' * 40), local_sha1).encode()]
+    data = build_lines_data(lines) + create_pack(missing)
+    url = git_url + '/git-receive-pack'
+    response = http_request(url, username, password, data=data)
+    lines = extract_lines(response)
+    assert len(lines) >= 2, \
+        'expected at least 2 lines, got {}'.format(len(lines))
+    assert lines[0] == b'unpack ok\n', \
+        "expected line 1 b'unpack ok' got :{}".format(lines[0])
+    assert lines[1] == b'ok refs/heads/main\n', \
+        "expected line 2 b'ok refs/heads/main', got {}".format(lines[1])
+    return (remote_sha1, missing)
+
+     
     
 if __name__ == "__main__":
     repo_name = "my_repo"
