@@ -402,6 +402,23 @@ def find_missing_objects(local_sha1, remote_sha1):
     remote_objects = find_commit_objects(remote_sha1)
     return local_objects - remote_objects
     
+def encode_pack_object(obj):
+    """Encode a single object for a pack file and return bytes
+    (variable-length header followed by compressed data bytes)."""
+    obj_type, data = read_object(obj)
+    type_num = ObjectType[obj_type].value
+    size = len(data)
+    byte = (type_num << 4) | (size & 0x0f)
+    size >>= 4
+    header = []
+    while size:
+        header.append(byte | 0x80)
+        byte = size & 0x7f
+        size >>= 7
+    header.append(byte)
+    return bytes(header) + zlib.compress(data)
+
+    
 if __name__ == "__main__":
     repo_name = "my_repo"
     if not os.path.exists(repo_name):
