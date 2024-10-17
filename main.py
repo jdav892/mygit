@@ -392,6 +392,15 @@ def find_commit_objects(commit_sha1):
     for parent in parents:
         objects.update(find_commit_objects(parent))
     return objects
+
+def find_missing_objects(local_sha1, remote_sha1):
+    """Return set of sha1 hashes of object in local commit that are
+    missing at the remote(based on the given remote commit hash)"""
+    local_objects = find_commit_objects(local_sha1)
+    if remote_sha1 is None:
+        return local_objects
+    remote_objects = find_commit_objects(remote_sha1)
+    return local_objects - remote_objects
     
 if __name__ == "__main__":
     repo_name = "my_repo"
