@@ -418,6 +418,15 @@ def encode_pack_object(obj):
     header.append(byte)
     return bytes(header) + zlib.compress(data)
 
+def create_pack(objects):
+    """Create pack file containing all objects in given set of sha1 hashes,
+     return bytes of full pack file"""
+    header = struct.pack('!4sLL', b'PACK', 2, len(objects))
+    body = b''.join(encode_pack_object(o) for o in sorted(objects))
+    contents = header + body
+    sha1 = hashlib.sha1(contents).digest()
+    data = contents + sha1
+    return data
     
 if __name__ == "__main__":
     repo_name = "my_repo"
