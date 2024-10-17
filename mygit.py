@@ -1,14 +1,15 @@
-import argparse, collections, difflib, enum, hashlib, operator, os, stat
+import argparse, collections, difflib, enum, hashlib, operator,stat
 import struct, sys, time, urllib.request, zlib
+import os
+
 
 #Data for one entry in the git index(.git/index)
 IndexEntry = collections.namedtuple('IndexEntry', [
         'ctime_s', 'ctime_n', 'mtime_s', 'mtime_n', 'dev', 'ino', 'mode',
         'uid', 'gid', 'size', 'sha1', 'flags', 'path',
     ])
-    
-GIT_USERNAME = os.environ.get["GIT_USERNAME"]
-GIT_PASSWORD = os.environ.get["GIT_PASSWORD"]
+
+
 
 
 class ObjectType(enum.Enum):
@@ -433,9 +434,9 @@ def create_pack(objects):
 def push(git_url, username=None, password=None):
     #Push main branch to given git repo URL
     if username is None:
-        username = os.environ.get['GIT_USERNAME']
+        username = os.environ.get("GIT_USERNAME")
     if password is None:
-        username = os.environ.get['GIT_PASSWORD']
+        password = os.environ.get("GIT_PASSWORD") 
     remote_sha1 = get_remote_main_hash(git_url, username, password)
     local_sha1 = get_local_main_hash()
     missing = find_missing_objects(local_sha1, remote_sha1)
@@ -460,7 +461,7 @@ def push(git_url, username=None, password=None):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    sub_parsers = parser.add_subparser(dest='command', metavar='command')
+    sub_parsers = parser.add_subparsers(dest='command', metavar='command')
     sub_parsers.required = True
     
     sub_parser = sub_parsers.add_parser('add',
@@ -479,7 +480,7 @@ if __name__ == "__main__":
     
     sub_parser = sub_parsers.add_parser('commit',
             help='commit current state of index to main branch')
-    sub_parser = add_argument('-a', '--author',
+    sub_parser.add_argument('-a', '--author',
             help='commit author in format "A U Thor <author@example.com"'
             '(Uses GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL environment '
             'variables by default)')
@@ -527,5 +528,31 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    
-    
+    if args.command == 'add':
+        add(args.path)
+    elif args.command == 'cat-file':
+        try:
+            cat_file(args.mode, args.hash_prefix)
+        
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            sys.exit(1)
+            
+    elif args.command == 'commit':
+        commit(args.message, author=args.author)
+    elif args.command == 'diff':
+        diff()
+    elif args.command == 'hash-object':
+        sha1 = hash_objects(read_file(args.path), args.type, write=args.write)
+        print(sha1)
+    elif args.command == 'init':
+        init(args.repo)
+    elif args.command == 'ls-files':
+        ls_files(details=args.stage)
+    elif args.command == 'push':
+        push(args.git_url, username=args.username, password=args.password)
+    elif args.command == 'status':
+        status()
+    else:
+        assert False, 'unexpected command {!r}'.format(args.command)
+             
